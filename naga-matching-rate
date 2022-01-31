@@ -1,0 +1,72 @@
+#!/bin/sh
+
+scripts=./scripts
+results=./results
+extract_script="$scripts"/extract-script.py
+replace_quotes="$scripts"/replace-single-quote.sh 
+calc_dahai_diff="$scripts"/dahai-diff.sh 
+aggregate="$scripts"/aggregate.sh 
+
+usage() {
+    echo "$0" haihu-url
+    exit 1
+}
+
+url="$1"
+
+html=`mktemp`
+script=`mktemp`
+
+if [ -z "$url" ]; then
+    usage
+fi
+
+# htmlダウンロード
+echo "Downloading $url ..."
+curl -s "$url" >"$html"
+
+# htmlから変数宣言部を取り出し
+python3 "$extract_script" "$html" >"$script"
+
+# 宣言された変数の中身をjsonとして保存
+# 単純な正規表現の抽出でやっているが，本当はjavascriptのパーサとか使いたい気もする
+
+haihuid=`cat "$script" |\
+    grep 'const haihuId' |\
+    sed 's/^.*"\([^"]*\)"$/\1/'`
+
+resultdir="$results"/"$haihuid"
+mkdir -p "$resultdir"
+
+pred="$resultdir"/pred.json
+playerinfo="$resultdir"/playerinfo.json
+
+echo "haihu: $pred"
+echo "playerinfo: $playerinfo"
+
+cat "$script" |\
+    grep 'const pred' |\
+    sed 's/^[^[]*\(\[.*\]\)$/\1/' >"$resultdir""/pred.json"
+cat "$script" |\
+    grep 'const playerInfo' |\
+    sed 's/^[^{]*\({.*}\)$/\1/' >"$resultdir""/playerinfo.json"
+sh "$replace_quotes" "$resultdir""/playerinfo.json"
+
+# 推奨打牌との差分をカウント
+
+dahai_diff="$resultdir"/dahai-diff.json
+sh "$calc_dahai_diff" "$playerinfo" "$pred" >"$dahai_diff"
+echo "dahai diff: $dahai_diff"
+
+# 差分のカウントから一致率を集計
+
+dahai_match="$resultdir"/dahai-match.json
+sh "$aggregate" "$dahai_diff" >"$dahai_match"
+echo "dahai match: $dahai_match"
+
+cat "$dahai_match"
+
+# 一時ファイルの削除
+
+rm "$html"
+rm "$script"
