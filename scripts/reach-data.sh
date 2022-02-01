@@ -1,7 +1,7 @@
 #!/bin/sh
 
 jqscripts=./scripts/jq
-dahai_diff_query="$jqscripts"/dahai-diff.jq
+query="$jqscripts"/reach-data.jq
 
 last_player=3
 
@@ -18,5 +18,5 @@ for player in `seq 0 "$last_player"`; do
     jq -c -M \
         --argjson player "$player" \
         --arg name "$name" \
-        -f "$dahai_diff_query"
+        -f "$query"
 done

@@ -19,9 +19,10 @@
             length
         ]
     )
-]
-| {
+] |
+{
+    id: $player,
     name: $name,
-    dahai_choice: .[0],
-    dahai_diff: .[1]
+    dahai_choice_count: .[0] | {sum: (. | add), each_kyoku: .},
+    dahai_diff_count:   .[1] | {sum: (. | add), each_kyoku: .}
 }
