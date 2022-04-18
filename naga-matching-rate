@@ -77,6 +77,8 @@ match="$resultdir"/match.json
 sh "$aggregate" "$dahai_diff" "$reach_decision" >"$match"
 echo "match: $match"
 
+cat "$match"
+
 # 一時ファイルの削除
 
 rm "$html"
